@@ -1,0 +1,208 @@
+<div class='tituloPagina'>
+  {{Titulo}} <small>{{TituloAccionABMC[AccionABMC]}}</small>
+</div>
+
+<!-- Formulario Filtro de busqueda, se ve cuando la accion es Listado(busqueda/listado)-->
+<form name="FormBusqueda" [formGroup]='FormBusqueda' *ngIf="AccionABMC == 'L'">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-4 col-md-2">
+        <label class="col-form-label">RazonSocial:</label>
+      </div>
+      <div class="col-sm-8 col-md-4">
+        <input type="text" name="RazonSocial" class="form-control" formControlName="Nombre" maxlength="55"/>
+      </div>
+      <div class="col-sm-4 col-md-2">
+        <label class="col-form-label">Activo:</label>
+      </div>
+      <div class="col-sm-8 col-md-4">
+        <select class="form-control" name="Activo" formControlName="Activo" >
+            <option *ngFor="let opt of OpcionesActivo" [ngValue]="opt.Id">
+                        ‌{{ opt.Nombre }}
+			</option>            
+          </select>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- Botones -->
+    <div class="row justify-content-center botones">
+      <button type="button" class="btn btn-primary" (click)="Pagina=1; Buscar();">
+            <i class="fa fa-search"> </i> Buscar
+        </button>
+      <button type="button" class="btn btn-primary" (click)="Agregar()">
+            <i class="fa fa-plus"> </i> 
+            Agregar
+        </button>
+    </div>
+  </div>
+</form>
+
+<!-- Tabla de resutados de busqueda y Paginador-->
+<div id="divTablaResultados" *ngIf="AccionABMC == 'L' && Items?.length > 0">
+  <table class="table table-hover table-sm table-bordered table-striped">
+    <thead>
+      <tr>
+        <th class="text-center">RazonSocial</th>
+        <th class="text-center">Cantidad de Empleados</th>
+        <th class="text-center">Fecha de Fundacion</th>
+        <th class="text-center">Activo</th>
+        <th class="text-center text-nowrap">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let Item of Items">
+        <td>{{Item.RazonSocial | uppercase}}</td>
+        <td class="text-right">{{Item.CantidadEmpleados}}</td>
+        <td class="text-right">{{Item.FechaFundacion| date:'dd/MM/yyyy'}}</td>
+        <td>{{Item.Activo ? 'SI' : 'NO'}}</td>
+        <td class="text-center text-nowrap">
+          <button class="btn btn-sm btn-outline-primary" title="Consultar" (click)="Consultar(Item)">
+                    <i class="fa fa-eye"></i>
+                </button>
+          <button class="btn btn-sm btn-outline-primary" title="Modificar" (click)="Modificar(Item)">
+                    <i class="fa fa-pencil"></i>
+                </button>
+          <button class="btn btn-sm" [ngClass]="{'btn-outline-danger': Item.Activo, 'btn-outline-success': !Item.Activo}"
+                    title="{{Item.Activo ? 'Desactivar':'Activar'}}" (click)="ActivarDesactivar(Item)">
+                    <i class="fa fa-{{Item.Activo ? 'times':'check'}}"></i>
+                </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Paginador-->
+  <div class="paginador">
+    <div class="row">
+      <div class="col">
+        <span class="pyBadge">Registros: {{RegistrosTotal}}</span>
+      </div>
+      <div class="col text-center">
+        <ngb-pagination [(page)]="Pagina" (pageChange)="Buscar()" [pageSize]="10" [maxSize]="10"
+          [collectionSize]="RegistrosTotal"></ngb-pagination>
+      </div>
+      <div class="col text-right">
+        <button class="btn btn-primary" (click)="ImprimirListado()"><i class="fa fa-print"></i>
+                    Imprimir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--No se encontraron registros-->
+<div class="alert alert-info mensajesAlert" *ngIf="AccionABMC == 'L' && Items?.length== 0">
+  <i class="fa fa-exclamation-sign"></i>{{Mensajes['SD']}}
+  <!-- texto: No se encontraron registros -->
+</div>
+
+<!-- Registro en Alta,Modificacion y Consulta -->
+<form name="FormRegistro" [formGroup]='FormRegistro' *ngIf="AccionABMC != 'L'">
+  <div class="container-fluid">
+    <fieldset [disabled]="AccionABMC==='C'">
+      <!--campo razon social-->
+      <div class="row">
+        <div class="col-sm-4 col-md-3 offset-md-1">
+          <label class="col-form-label" for="RazonSocial">RazonSocial<span
+                    class="text-danger">*</span>:</label>
+        </div>
+        <div class="col-sm-8 col-md-6">
+          <input type="text" class="form-control" formControlName="RazonSocial"
+         [ngClass]="{'is-invalid': (FormRegistro.controls['RazonSocial'].touched || submitted)  
+            && FormRegistro.controls['RazonSocial'].errors}"/>
+
+          <div class="validacion" *ngIf="(FormRegistro.controls['RazonSocial'].touched || submitted) 
+                        && FormRegistro.controls['RazonSocial'].hasError('required')">
+            Dato requerido.
+          </div>
+          <div class="validacion"
+            *ngIf="(FormRegistro.controls['Nombre'].touched || submitted) 
+                       && (FormRegistro.controls['Nombre'].hasError('minlength') || FormRegistro.controls['Nombre'].hasError('maxlength')) ">
+            Dato texto, 4 a 50 caracteres.
+          </div>
+
+        </div>
+      </div>
+
+      <!--campo cantidad empleados-->
+      <div class="row">
+        <div class="col-sm-4 col-md-3 offset-md-1">
+          <label class="col-form-label" for="CantidadEmpleados">
+                Cantidad Empleados<span class="text-danger">*</span>:
+          </label>
+        </div>
+        <div class="col-sm-8 col-md-6">
+          <input type="text" name="CantidadEmpleados" class="form-control" formControlName="CantidadEmpleados"
+        [ngClass]="{'is-invalid': (FormRegistro.controls['CantidadEmpleados'].touched || submitted)  
+            && FormRegistro.controls['CantidadEmpleados'].errors}" />
+          <div class="validacion" *ngIf="(FormRegistro.controls['CantidadEmpleados'].touched || submitted) 
+                        && FormRegistro.controls['CantidadEmpleados'].hasError('required')">
+            Dato requerido.
+          </div>
+          <div class="validacion" *ngIf="(FormRegistro.controls['CantidadEmpleados'].touched || submitted) 
+                        && FormRegistro.controls['CantidadEmpleados'].hasError('pattern')">
+            Dato numérico, hasta valor 300.
+          </div>
+        </div>
+      </div>
+
+      <!--campo FechaFundacion-->
+      <div class="row">
+        <div class="col-sm-4 col-md-3 offset-md-1">
+          <label class="col-form-label">Fecha de Fundacion<span
+                    class="text-danger">*</span>:
+          </label>
+        </div>
+        <div class="col-sm-8 col-md-6">
+          <input class="form-control" formControlName="FechaFundacion"
+                           name="FechaFundacion"
+                           [ngClass]="{'is-invalid': (FormRegistro.controls['FechaFundacion'].touched || submitted)  
+            && FormRegistro.controls['FechaFundacion'].errors}" />
+
+          <div class="validacion" *ngIf="(FormRegistro.controls['FechaFundacion'].touched || submitted) 
+                       && FormRegistro.controls['FechaFundacion'].hasError('required')">
+            Dato requerido.
+          </div>
+          <div class="validacion" *ngIf="(FormRegistro.controls['FechaFundacion'].touched || submitted) 
+                       && FormRegistro.controls['FechaFundacion'].hasError('pattern')">
+            Dato fecha, formato dd/mm/aaaa.
+          </div>
+        </div>
+      </div>
+
+      <!--campo activo-->
+      <div class="row">
+        <div class="col-sm-4 col-md-3 offset-md-1">
+          <label class="col-form-label" for="Activo">Activo:</label>
+        </div>
+        <div class="col-sm-8 col-md-6">
+          <!-- ref?? disabled html no fucniona en reactive forms? -->
+          <select class="form-control" name="Activo" formControlName="Activo" [disabled]="true">
+            <option *ngFor="let opt of OpcionesActivo"  [ngValue]="opt.Id">
+                        ‌{{ opt.Nombre }}
+			      </option>            
+        </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Botones Grabar, Cancelar/Volver' -->
+    <hr>
+    <div class="row justify-content-center botones">
+      <button type="button" *ngIf="AccionABMC!=='C'" class="btn btn-primary" (click)="Grabar()">
+            <i class="fa fa-check"></i> Grabar
+        </button>
+      &nbsp;
+      <button type="button" class="btn btn-warning" (click)="Volver()">
+            <i class="fa fa-undo"></i> {{AccionABMC=='C' ? 'Volver' : 'Cancelar'}}
+        </button>
+    </div>
+
+    <!--texto: Revisar los datos ingresados...-->
+    <div *ngIf="submitted && FormRegistro.invalid" class="row alert alert-danger mensajesAlert">
+      <i class="fa fa-exclamation-sign"></i>{{Mensajes['RD']}}
+    </div>
+
+  </div>
+</form>
